@@ -120,3 +120,99 @@ Contributions welcome! Please open issues or pull requests. Keep code quality hi
 ## 📄 License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details. 
+
+## 📦 Anyx Common API SDK
+
+This boilerplate includes a thin, typed SDK for the Anyx Common API.
+
+- Location: `src/sdk/anyx.ts` (exported via `src/sdk/index.ts`)
+- Methods:
+  - `llm({ model, messages })`
+  - `image({ prompt, size? })`
+  - `email({ to, subject, html })`
+  - `sms({ to, body })`
+- Behavior:
+  - Sends requests to your backend at `VITE_ANYX_SERVER_URL` (which should attach `x-api-key`), and includes `x-project-id` from `VITE_ANYX_PROJECT_ID`.
+  - Maps errors to typed classes: `AuthError (401)`, `TierError (403)`, `CreditExceededError (402)`, `RateLimitedError (429)`, `ProviderError (5xx)`, `HttpError`.
+  - Validates responses with `zod`.
+
+### Environment
+
+Add the following to your `.env` for browser access (Vite requires the `VITE_` prefix):
+
+```env
+VITE_ANYX_SERVER_URL=https://your-anyx-server.example.com
+VITE_ANYX_PROJECT_ID=<your-project-id>
+```
+
+You can also override at runtime:
+
+```ts
+import { createAnyxClient } from '@/sdk'
+
+const anyx = createAnyxClient({
+  baseUrl: 'https://your-anyx-server.example.com',
+  projectId: '<your-project-id>',
+})
+```
+
+### Usage examples
+
+```ts
+import { createAnyxClient, TierError, CreditExceededError } from '@/sdk'
+
+const anyx = createAnyxClient() // reads VITE_ANYX_SERVER_URL and VITE_ANYX_PROJECT_ID
+
+// LLM
+const llm = await anyx.llm({
+  model: 'gpt-4.1-nano',
+  messages: [{ role: 'user', content: 'Hello' }],
+})
+
+// Image (may throw TierError on lower tiers)
+try {
+  const img = await anyx.image({ prompt: 'a modern logo in blue', size: '1024x1024' })
+} catch (e) {
+  if (e instanceof TierError) {
+    // handle upgrade CTA
+  }
+}
+
+// Email / SMS (may throw CreditExceededError)
+try {
+  const email = await anyx.email({ to: 'user@example.com', subject: 'Welcome', html: '<b>Hello</b>' })
+  const sms = await anyx.sms({ to: '+15555550123', body: 'Your code is 123456' })
+} catch (e) {
+  if (e instanceof CreditExceededError) {
+    // handle out-of-credits
+  }
+}
+```
+
+### Integration tests (opt-in)
+
+Integration tests live under `@tests/sdk/integration` and are disabled by default. They hit your configured server and may consume credits.
+
+1) Ensure `.env` has:
+
+```env
+VITE_ANYX_SERVER_URL=https://your-anyx-server.example.com
+VITE_ANYX_PROJECT_ID=<your-project-id>
+```
+
+2) Run tests explicitly:
+
+```bash
+# PowerShell
+$env:RUN_ANYX_INTEGRATION='true'; pnpm test
+
+# POSIX
+RUN_ANYX_INTEGRATION=true pnpm test
+```
+
+Note: `@tests` is gitignored by default. For CI, remove or adjust the ignore rule.
+
+### Images API notes
+
+OpenAI Images accepts the following sizes only: `1024x1024`, `1024x1536`, `1536x1024`, or `auto`.
+Use one of these values for `size`. If a different size is sent, the backend should respond with a clear `400` and the allowed list. The SDK types reflect the allowed set.
