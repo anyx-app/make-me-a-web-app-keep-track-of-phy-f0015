@@ -66,7 +66,7 @@ export function HeroSplit({
   subtitle,
   description,
   primaryCta,
-  primaryCtaIcon = <ArrowRight className="ml-2 h-4 w-4" />,
+  primaryCtaIcon,
   onPrimaryClick,
   secondaryCta,
   onSecondaryClick,
@@ -179,7 +179,7 @@ export function HeroSplit({
                 className={cn('shadow-lg', classes.transition)}
               >
                 {primaryCta}
-                {primaryCtaIcon}
+                {primaryCtaIcon || <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
               
               {secondaryCta && (
