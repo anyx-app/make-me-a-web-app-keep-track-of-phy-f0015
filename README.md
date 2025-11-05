@@ -849,3 +849,155 @@ channel.track({ user: 'alice', status: 'online' })
 
 - `src/sdk/realtime.ts` - Realtime utilities
 - `src/sdk/supabase.ts` - Supabase client singleton
+
+---
+
+## 🔐 Dual-Mode Authentication
+
+This boilerplate supports **two authentication modes** automatically:
+
+### Mode 1: Native Supabase Auth (Dedicated Instances)
+- Direct Supabase SDK calls
+- Your own Supabase project
+- Standard OAuth flow
+
+### Mode 2: Backend Proxy Auth (Shared Schema Projects)
+- Centralized authentication
+- Multi-tenant isolation via namespaced emails
+- OAuth support via backend proxy
+- Auto-detected by `VITE_USE_BACKEND_AUTH` flag
+
+### Usage
+
+Import from `@/lib/auth` instead of using Supabase SDK directly:
+
+```tsx
+import { signUp, signIn, signInWithOAuth, signOut } from '@/lib/auth'
+
+// Email/password signup
+async function handleSignup(email: string, password: string) {
+  try {
+    const { user, session } = await signUp(email, password)
+    console.log('User created:', user)
+  } catch (error) {
+    console.error('Signup failed:', error)
+  }
+}
+
+// Email/password login
+async function handleLogin(email: string, password: string) {
+  try {
+    const { user, session } = await signIn(email, password)
+    console.log('Logged in:', user)
+  } catch (error) {
+    console.error('Login failed:', error)
+  }
+}
+
+// OAuth (Google, GitHub, etc.)
+async function handleOAuth(provider: 'google' | 'github') {
+  await signInWithOAuth(provider, window.location.origin + '/auth/callback')
+}
+
+// Sign out
+async function handleSignOut() {
+  await signOut()
+}
+```
+
+### How It Works
+
+The auth lib automatically detects the mode based on environment variables:
+
+**Dedicated Mode** (`VITE_USE_BACKEND_AUTH` not set or `false`):
+```typescript
+// Uses native Supabase SDK
+return await supabase.auth.signUp({ email, password })
+```
+
+**Shared Schema Mode** (`VITE_USE_BACKEND_AUTH=true`):
+```typescript
+// Uses backend proxy API
+const res = await fetch(`${BACKEND_URL}/api/projects/${PROJECT_ID}/auth/signup`, {
+  method: 'POST',
+  body: JSON.stringify({ email, password })
+})
+```
+
+### Environment Variables
+
+**Dedicated Mode:**
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+**Shared Schema Mode:**
+```env
+VITE_USE_BACKEND_AUTH=true
+VITE_PROJECT_ID=your-project-uuid
+VITE_SUPABASE_URL=https://centralized.supabase.co
+VITE_SUPABASE_ANON_KEY=centralized-anon-key
+VITE_ANYX_SERVER_URL=https://anyx.dev
+```
+
+### OAuth Callback
+
+OAuth redirects are handled differently:
+
+**Dedicated**: Supabase redirects directly to your app
+**Shared**: Backend proxy handles the callback, then redirects with tokens
+
+Add a callback route:
+
+```tsx
+// src/pages/AuthCallback.tsx
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '@/integrations/supabase/client'
+
+export default function AuthCallback() {
+  const navigate = useNavigate()
+  
+  useEffect(() => {
+    // Extract tokens from URL (backend proxy flow)
+    const params = new URLSearchParams(window.location.search)
+    const accessToken = params.get('access_token')
+    const refreshToken = params.get('refresh_token')
+    
+    if (accessToken && refreshToken) {
+      // Set session manually (shared schema mode)
+      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(() => navigate('/dashboard'))
+    } else {
+      // Native Supabase flow handles automatically
+      navigate('/dashboard')
+    }
+  }, [navigate])
+  
+  return <div>Completing sign in...</div>
+}
+```
+
+### Migration Guide
+
+**Existing code using Supabase SDK:**
+
+```tsx
+// ❌ OLD (breaks in shared schema mode)
+import { supabase } from '@/integrations/supabase/client'
+await supabase.auth.signUp({ email, password })
+```
+
+```tsx
+// ✅ NEW (works in both modes)
+import { signUp } from '@/lib/auth'
+await signUp(email, password)
+```
+
+### Files
+
+- `src/lib/auth.ts` - Dual-mode auth library
+- `src/integrations/supabase/client.ts` - Supabase client singleton
+- `src/auth/AuthProvider.tsx` - Auth context (works with both modes)
+- `src/pages/Auth.tsx` - Drop-in auth UI
