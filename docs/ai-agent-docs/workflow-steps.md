@@ -60,7 +60,7 @@ git merge origin/main --no-edit
 **Do NOT**: Leave placeholder Index.tsx as default route  
 **Result**: All your pages are accessible ✓
 
-**See detailed instructions**: `.openhands/microagents/core-guidelines.md` → "Routing Setup"
+**See detailed instructions**: `core-guidelines.md` → "Routing Setup"
 
 ---
 
@@ -132,7 +132,7 @@ git merge origin/main --no-edit
 ### Step 4: Documentation
 Update **both** files:
 
-**`.openhands/microagents/repo.md`:**
+**`repo.md`:**
 ```markdown
 # Project Context
 [Keep project description current]

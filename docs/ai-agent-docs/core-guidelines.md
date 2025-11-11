@@ -18,7 +18,6 @@ You MUST NOT change ANY of these files under ANY circumstances:
 - `index.html` ❌
 - `tailwind.config.ts` ❌
 - `postcss.config.js` ❌
-- `.openhands/microagents/` ❌ (any files in this directory - these are YOUR instructions!)
 
 **WHY THESE ARE FORBIDDEN:**
 - These files control the build system, deployment, and project infrastructure
@@ -49,7 +48,7 @@ You MUST NOT change ANY of these files under ANY circumstances:
 - ✅ `src/` directory (pages, components, hooks, utils, types, data)
 - ✅ `supabase/migrations/*.sql` (if database is connected)
 - ✅ `README.md` (project documentation)
-- ✅ `.openhands/microagents/repo.md` (project context - YOU MUST UPDATE THIS)
+- ✅ `repo.md` (project context - YOU MUST UPDATE THIS)
 
 ---
 
@@ -166,7 +165,7 @@ export default function Dashboard() {
 
 ## 🚨 CRITICAL: Defensive Coding (Prevent Crashes)
 
-**MANDATORY: Read `.openhands/microagents/defensive-coding.md` for complete patterns.**
+**MANDATORY: Read `defensive-coding.md` for complete patterns.**
 
 **Every generated project MUST follow these rules to prevent runtime errors:**
 
@@ -299,7 +298,7 @@ Be cost-effective with token usage:
 **Before every commit:**
 1. Run `pnpm lint` - must pass
 2. Run `pnpm build` - must succeed
-3. Update `.openhands/microagents/repo.md` with changes
+3. Update `repo.md` with changes
 4. Update `README.md` if functionality changed
 
 ## Browser & Testing

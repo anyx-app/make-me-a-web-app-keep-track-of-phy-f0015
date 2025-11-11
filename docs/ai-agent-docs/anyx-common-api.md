@@ -1,6 +1,6 @@
 ---
 name: anyx-common-api
-agent: openhands
+agent: anyx-ai
 triggers:
   - anyx
   - api

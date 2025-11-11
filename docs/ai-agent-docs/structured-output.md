@@ -74,7 +74,7 @@
 - **testing_status**: Results of `pnpm lint` and `pnpm build`
 - **pr_ready**: Boolean - is PR created and ready?
 - **pr_is_draft**: Boolean - MUST be `false` (no draft PRs)
-- **repo_md_updated**: Boolean - did you update `.openhands/microagents/repo.md`?
+- **repo_md_updated**: Boolean - did you update `repo.md`?
 
 ### issues_encountered (Required if stuck/need_help)
 - **is_stuck**: Boolean - are you blocked?
