@@ -18,8 +18,12 @@ import {
   UserPlus,
   BookHeart,
   LogOut,
-  Check
+  Check,
+  X,
+  UserMinus
 } from 'lucide-react'
+import { friendService, type User, type FriendRequestWithUser } from '@/services/friendService'
+import { friendsCatalogService, type FriendBook } from '@/services/friendsCatalogService'
 
 interface Book {
   id: string
@@ -86,8 +90,14 @@ export default function Dashboard() {
   const [isbnLoading, setIsbnLoading] = useState(false)
   const [bookDetails, setBookDetails] = useState<Book | null>(null)
   
-  // Friends (for future implementation)
+  // Friends
   const [friendUsername, setFriendUsername] = useState('')
+  const [friendSearchResults, setFriendSearchResults] = useState<User[]>([])
+  const [incomingRequests, setIncomingRequests] = useState<FriendRequestWithUser[]>([])
+  const [outgoingRequests, setOutgoingRequests] = useState<FriendRequestWithUser[]>([])
+  const [friends, setFriends] = useState<User[]>([])
+  const [friendsCatalog, setFriendsCatalog] = useState<FriendBook[]>([])
+  const [catalogSearchTerm, setCatalogSearchTerm] = useState('')
 
   const loadDashboardData = useCallback(async () => {
     if (!user) return
@@ -176,11 +186,109 @@ export default function Dashboard() {
     }
   }, [user])
 
+  const loadFriendData = useCallback(async () => {
+    if (!user) return
+    
+    try {
+      await friendService.ensureUserExists(user.id, user.email)
+      
+      const [incoming, outgoing, friendsList] = await Promise.all([
+        friendService.getIncomingRequests(user.id),
+        friendService.getOutgoingRequests(user.id),
+        friendService.getFriends(user.id)
+      ])
+      
+      setIncomingRequests(incoming)
+      setOutgoingRequests(outgoing)
+      setFriends(friendsList)
+    } catch (error) {
+      console.error('Error loading friend data:', error)
+    }
+  }, [user])
+
   useEffect(() => {
     if (user) {
       loadDashboardData()
+      loadFriendData()
     }
-  }, [user, loadDashboardData])
+  }, [user, loadDashboardData, loadFriendData])
+
+  const searchUsers = async () => {
+    if (!friendUsername.trim()) {
+      setFriendSearchResults([])
+      return
+    }
+    
+    try {
+      const results = await friendService.searchUsersByUsername(friendUsername)
+      setFriendSearchResults(results)
+    } catch (error) {
+      toast({ title: "Search failed", description: String(error), variant: "destructive" })
+    }
+  }
+
+  const sendFriendRequest = async (username: string) => {
+    if (!user) return
+    
+    try {
+      await friendService.sendFriendRequest(user.id, username)
+      toast({ title: "Friend request sent!" })
+      setFriendUsername('')
+      setFriendSearchResults([])
+      loadFriendData()
+    } catch (error) {
+      toast({ title: "Failed to send request", description: String(error), variant: "destructive" })
+    }
+  }
+
+  const acceptFriendRequest = async (requestId: string) => {
+    if (!user) return
+    
+    try {
+      await friendService.acceptFriendRequest(requestId, user.id)
+      toast({ title: "Friend request accepted!" })
+      loadFriendData()
+      loadDashboardData()
+    } catch (error) {
+      toast({ title: "Failed to accept request", description: String(error), variant: "destructive" })
+    }
+  }
+
+  const declineFriendRequest = async (requestId: string) => {
+    if (!user) return
+    
+    try {
+      await friendService.declineFriendRequest(requestId, user.id)
+      toast({ title: "Friend request declined" })
+      loadFriendData()
+    } catch (error) {
+      toast({ title: "Failed to decline request", description: String(error), variant: "destructive" })
+    }
+  }
+
+  const removeFriend = async (friendId: string) => {
+    if (!user) return
+    
+    try {
+      await friendService.removeFriend(user.id, friendId)
+      toast({ title: "Friend removed" })
+      loadFriendData()
+      loadDashboardData()
+    } catch (error) {
+      toast({ title: "Failed to remove friend", description: String(error), variant: "destructive" })
+    }
+  }
+
+  const searchFriendsCatalog = async () => {
+    if (!user) return
+    
+    try {
+      const results = await friendsCatalogService.searchFriendsCatalog(user.id, catalogSearchTerm)
+      setFriendsCatalog(results)
+    } catch (error) {
+      toast({ title: "Search failed", description: String(error), variant: "destructive" })
+    }
+  }
 
   const fetchBookByISBN = async () => {
     if (!isbn.trim()) {
@@ -410,7 +518,7 @@ export default function Dashboard() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="home">
               <Library className="h-4 w-4 mr-2" />
               My Collection
@@ -422,6 +530,10 @@ export default function Dashboard() {
             <TabsTrigger value="friends">
               <Users className="h-4 w-4 mr-2" />
               Friends
+            </TabsTrigger>
+            <TabsTrigger value="catalog">
+              <Search className="h-4 w-4 mr-2" />
+              Friends' Catalog
             </TabsTrigger>
             <TabsTrigger value="lending">
               <BookHeart className="h-4 w-4 mr-2" />
@@ -563,28 +675,257 @@ export default function Dashboard() {
 
           {/* Friends Tab */}
           <TabsContent value="friends" className="space-y-6">
+            {/* Search Users */}
             <Card>
               <CardHeader>
-                <CardTitle>Friends Management</CardTitle>
-                <CardDescription>Connect with fellow book lovers</CardDescription>
+                <CardTitle>Add Friends</CardTitle>
+                <CardDescription>Search for users by username</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Enter friend's username"
+                    placeholder="Enter username to search..."
                     value={friendUsername}
                     onChange={(e) => setFriendUsername(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && searchUsers()}
                   />
-                  <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90">
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Add Friend
+                  <Button onClick={searchUsers} className="bg-gradient-to-r from-primary to-accent hover:opacity-90">
+                    <Search className="h-4 w-4 mr-2" />
+                    Search
                   </Button>
                 </div>
 
-                <div className="text-center py-8 text-muted-foreground">
-                  <Users className="h-16 w-16 mx-auto mb-4" />
-                  <p>Friends feature coming soon!</p>
+                {friendSearchResults.length > 0 && (
+                  <div className="space-y-2 mt-4">
+                    {friendSearchResults.map((searchUser) => (
+                      <div key={searchUser.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="font-medium">@{searchUser.username}</p>
+                          {searchUser.display_name && (
+                            <p className="text-sm text-muted-foreground">{searchUser.display_name}</p>
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => sendFriendRequest(searchUser.username)}
+                          disabled={
+                            searchUser.id === user?.id ||
+                            friends.some(f => f.id === searchUser.id) ||
+                            outgoingRequests.some(r => r.user.id === searchUser.id)
+                          }
+                        >
+                          {searchUser.id === user?.id ? 'You' :
+                           friends.some(f => f.id === searchUser.id) ? 'Already Friends' :
+                           outgoingRequests.some(r => r.user.id === searchUser.id) ? 'Request Sent' :
+                           <>
+                             <UserPlus className="h-4 w-4 mr-2" />
+                             Add Friend
+                           </>
+                          }
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Incoming Requests */}
+            {incomingRequests.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Friend Requests</CardTitle>
+                  <CardDescription>Review incoming friend requests</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {incomingRequests.map((request) => (
+                    <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium">@{request.user.username}</p>
+                        {request.user.display_name && (
+                          <p className="text-sm text-muted-foreground">{request.user.display_name}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => acceptFriendRequest(request.id)}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <Check className="h-4 w-4 mr-1" />
+                          Accept
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => declineFriendRequest(request.id)}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Decline
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Outgoing Requests */}
+            {outgoingRequests.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pending Requests</CardTitle>
+                  <CardDescription>Friend requests you've sent</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {outgoingRequests.map((request) => (
+                    <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium">@{request.user.username}</p>
+                        {request.user.display_name && (
+                          <p className="text-sm text-muted-foreground">{request.user.display_name}</p>
+                        )}
+                      </div>
+                      <Badge variant="secondary">Pending</Badge>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Friends List */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Friends ({friends.length})</CardTitle>
+                <CardDescription>Manage your connections</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {friends.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="h-16 w-16 mx-auto mb-4" />
+                    <p>No friends yet. Start by searching for users above!</p>
+                  </div>
+                ) : (
+                  friends.map((friend) => (
+                    <div key={friend.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium">@{friend.username}</p>
+                        {friend.display_name && (
+                          <p className="text-sm text-muted-foreground">{friend.display_name}</p>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (confirm(`Remove ${friend.username} from friends?`)) {
+                            removeFriend(friend.id)
+                          }
+                        }}
+                      >
+                        <UserMinus className="h-4 w-4 mr-1" />
+                        Remove
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Friends' Catalog Search Tab */}
+          <TabsContent value="catalog" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Friends' Catalog Search</CardTitle>
+                <CardDescription>Discover books from your friends' collections</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search friends' books by title, author, or ISBN..."
+                      value={catalogSearchTerm}
+                      onChange={(e) => setCatalogSearchTerm(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && searchFriendsCatalog()}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Button onClick={searchFriendsCatalog} className="bg-gradient-to-r from-primary to-accent hover:opacity-90">
+                    <Search className="h-4 w-4 mr-2" />
+                    Search
+                  </Button>
                 </div>
+
+                {friends.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="h-16 w-16 mx-auto mb-4" />
+                    <p>Add friends first to search their book collections!</p>
+                  </div>
+                )}
+
+                {friends.length > 0 && friendsCatalog.length === 0 && catalogSearchTerm === '' && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <BookOpen className="h-16 w-16 mx-auto mb-4" />
+                    <p>Enter a search term to find books in your friends' collections</p>
+                  </div>
+                )}
+
+                {friendsCatalog.length === 0 && catalogSearchTerm !== '' && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <BookOpen className="h-16 w-16 mx-auto mb-4" />
+                    <p>No books found matching "{catalogSearchTerm}"</p>
+                  </div>
+                )}
+
+                {friendsCatalog.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {friendsCatalog.map((book, index) => (
+                      <Card key={`${book.id}-${book.owner_id}-${index}`} className="flex flex-col">
+                        <CardContent className="p-4 flex-1">
+                          <div className="flex gap-3">
+                            {book.cover_url ? (
+                              <img
+                                src={book.cover_url}
+                                alt={book.title}
+                                className="w-16 h-24 object-cover rounded shadow-sm"
+                              />
+                            ) : (
+                              <div className="w-16 h-24 bg-gradient-to-br from-primary/20 to-accent/20 rounded flex items-center justify-center">
+                                <BookOpen className="h-8 w-8 text-primary" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-sm line-clamp-2">{book.title}</h3>
+                              <p className="text-xs text-muted-foreground mt-1">{book.author}</p>
+                              {book.isbn && (
+                                <p className="text-xs text-muted-foreground mt-1">ISBN: {book.isbn}</p>
+                              )}
+                              <div className="mt-2 flex items-center gap-1 text-xs">
+                                <Users className="h-3 w-3 text-primary" />
+                                <span className="font-medium text-primary">
+                                  @{book.owner_username}
+                                </span>
+                              </div>
+                              {book.owner_display_name && (
+                                <p className="text-xs text-muted-foreground">
+                                  {book.owner_display_name}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          {book.summary && (
+                            <p className="text-xs text-muted-foreground mt-3 line-clamp-3">
+                              {book.summary}
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

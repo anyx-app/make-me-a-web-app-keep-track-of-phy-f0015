@@ -51,20 +51,64 @@ CREATE TABLE user_books (
 );
 ```
 
+#### `users`
+Stores user profile information for username-based friend lookups.
+
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT UNIQUE NOT NULL,
+  username TEXT UNIQUE NOT NULL,
+  display_name TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+Indexes:
+- `idx_users_username` - Fast username searches
+- `idx_users_email` - Fast email lookups
+
+#### `friend_requests`
+Manages friend request workflow (pending, accepted, declined).
+
+```sql
+CREATE TABLE friend_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  requester_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  recipient_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(requester_id, recipient_id),
+  CHECK (requester_id != recipient_id)
+);
+```
+
+Indexes:
+- `idx_friend_requests_recipient` - Fast incoming request queries
+- `idx_friend_requests_requester` - Fast outgoing request queries
+- `idx_friend_requests_status` - Filter by status
+
 #### `friendships`
-Manages user friend relationships (bidirectional).
+Manages bidirectional friend relationships (created automatically on request acceptance).
 
 ```sql
 CREATE TABLE friendships (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  friend_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  status TEXT DEFAULT 'pending',
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  friend_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status TEXT DEFAULT 'accepted',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id, friend_id),
   CHECK (user_id != friend_id)
 );
 ```
+
+Indexes:
+- `idx_friendships_user` - Fast friend list queries
+- `idx_friendships_friend` - Reverse lookups
+- `idx_friendships_status` - Filter by status
 
 #### `lending_requests`
 Tracks book lending between friends.
@@ -83,15 +127,44 @@ CREATE TABLE lending_requests (
 );
 ```
 
+#### Database Views
+
+##### `friends_books`
+Pre-joined view for efficient friends' catalog search (works around backend proxy JOIN limitations):
+
+```sql
+CREATE VIEW friends_books AS
+SELECT 
+  ub.id,
+  ub.user_id,
+  ub.book_id,
+  ub.is_read,
+  ub.added_at,
+  b.isbn,
+  b.title,
+  b.author,
+  b.cover_url,
+  b.summary,
+  b.published_year,
+  u.username as owner_username,
+  u.display_name as owner_display_name
+FROM user_books ub
+JOIN books b ON b.id = ub.book_id
+JOIN users u ON u.id = ub.user_id;
+```
+
+**Usage**: Query this view with friendship filtering to get book details + owner info in a single query.
+
 ### Frontend Architecture
 
 #### Pages
 - **Auth** (`/auth`) - Login/signup page using backend proxy authentication
 - **Dashboard** (`/dashboard`) - Main application interface with tabs:
-  - My Collection - Browse and manage books
-  - Add Book - ISBN entry and book fetching
-  - Friends - Friend management (placeholder)
-  - Lending - Lending requests (placeholder)
+  - **My Collection** - Browse and manage books
+  - **Add Book** - ISBN entry and book fetching
+  - **Friends** - Complete friend management system
+  - **Friends' Catalog** - Search across approved friends' book collections
+  - **Lending** - Lending requests (placeholder)
 
 #### Key Components
 - **Dashboard.tsx** - Main application interface with:
@@ -100,11 +173,56 @@ CREATE TABLE lending_requests (
   - ISBN entry form with Open Library API integration
   - Book detail preview and add to collection
   - Read/unread status toggle
+  - Friend management UI (search users, send/accept/decline requests, manage friends)
+  - Friends' catalog search with scoped results
 
 #### State Management
-- React hooks (`useState`, `useEffect`)
+- React hooks (`useState`, `useEffect`, `useCallback`)
 - Custom hooks: `useAuth()`, `useToast()`
 - Direct Supabase queries via backend proxy SDK
+
+#### Services
+
+##### `friendService.ts`
+Complete friend management API:
+
+```typescript
+// Ensure user exists in users table (call on login/signup)
+await friendService.ensureUserExists(userId: string, email: string)
+
+// Search users by username
+const results = await friendService.searchUsers(username: string, currentUserId: string)
+
+// Send friend request
+await friendService.sendFriendRequest(requesterId: string, recipientUsername: string)
+
+// View requests
+const incoming = await friendService.getIncomingRequests(userId: string)
+const outgoing = await friendService.getOutgoingRequests(userId: string)
+
+// Respond to request (creates bidirectional friendship on accept)
+await friendService.acceptFriendRequest(requestId: string, userId: string)
+await friendService.declineFriendRequest(requestId: string, userId: string)
+
+// Manage friends
+const friends = await friendService.getFriends(userId: string)
+await friendService.removeFriend(userId: string, friendId: string)
+```
+
+**Security**: All friend requests and friendships enforce auth checks at the application layer. Bidirectional friendships are created automatically when a request is accepted.
+
+##### `friendsCatalogService.ts`
+Search across approved friends' book catalogs:
+
+```typescript
+// Search books owned by user's friends (scoped to approved friendships)
+const results = await searchFriendsCatalog(userId: string, query: string)
+
+// Get detailed book info with owner information
+const details = await getFriendBookDetails(bookId: string, ownerId: string)
+```
+
+**Security**: Results are strictly scoped to books owned by users with approved friendships. No data exposure from non-friends.
 
 ### API Integration
 
