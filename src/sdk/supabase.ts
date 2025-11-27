@@ -153,13 +153,35 @@ class QueryBuilder {
       payload.single = this.singleMode;
     }
 
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    
+    // Add authentication token if available
+    const sessionStr = localStorage.getItem('anyx.auth.session');
+    if (sessionStr) {
+      try {
+        const session = JSON.parse(sessionStr);
+        if (session.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+      } catch (e) {
+        console.error('Failed to parse auth session:', e);
+      }
+    }
+
     const response = await fetch(`${backendUrl}/api/projects/${projectId}/query`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(payload)
     });
 
     if (!response.ok) {
+      // Handle authentication failures
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('anyx.auth.session');
+        window.dispatchEvent(new CustomEvent('auth-session-change', { detail: null }));
+        window.location.href = '/auth';
+        throw new Error('Session expired. Please sign in again.');
+      }
       const error = await response.json();
       throw new Error(error.error || 'Query failed');
     }

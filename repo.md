@@ -227,6 +227,18 @@ Built for **Vercel serverless** deployment:
 - No custom Node.js server required
 - Backend via Anyx proxy and Supabase Edge Functions
 
+## Recent Fixes
+
+### Authentication in SDK (2025-01)
+**Issue**: Dashboard queries were failing with "TypeError: Failed to fetch" because SDK requests to the backend proxy were missing authentication headers.
+
+**Solution**: Modified `src/sdk/supabase.ts` execute() method to:
+1. Retrieve access token from localStorage (`anyx.auth.session`)
+2. Include `Authorization: Bearer <token>` header in all backend proxy requests
+3. Handle 401/403 responses by clearing expired session and redirecting to /auth
+
+This fix resolves all dashboard data loading errors and ensures authenticated users can properly access their collections.
+
 ## Brand Identity
 
 **Name**: BookHarmony  
