@@ -39,6 +39,31 @@ interface UserBook {
   books: Book
 }
 
+interface UserBookData {
+  id: string
+  user_id: string
+  book_id: string
+  is_read: boolean
+  added_at: string
+}
+
+interface Friendship {
+  id: string
+  user_id: string
+  friend_id: string
+  status: string
+  created_at: string
+}
+
+interface LendingRequest {
+  id: string
+  book_id: string
+  owner_id: string
+  borrower_id: string
+  status: string
+  requested_at: string
+}
+
 
 
 export default function Dashboard() {
@@ -69,37 +94,82 @@ export default function Dashboard() {
 
     try {
       // Load user books
-      const { data: books, error: booksError } = await supabase
+      const { data: userBooksData, error: userBooksError } = await supabase
         .from('user_books')
-        .select('*, books(*)')
+        .select('*')
         .eq('user_id', user.id)
 
-      if (!booksError && books) {
-        setUserBooks(books)
-        setTotalBooks(books.length)
-        setReadBooks(books.filter((b: UserBook) => b.is_read).length)
+      if (userBooksError) throw userBooksError
+
+      // If we have user books, fetch the book details separately
+      if (userBooksData && userBooksData.length > 0) {
+        const typedUserBooks = userBooksData as UserBookData[]
+        const bookIds = typedUserBooks.map((ub) => ub.book_id)
+        
+        const { data: booksData, error: booksError } = await supabase
+          .from('books')
+          .select('*')
+          .in('id', bookIds)
+
+        if (booksError) throw booksError
+
+        const typedBooks = (booksData || []) as Book[]
+
+        // Join the data manually
+        const joinedBooks: UserBook[] = typedUserBooks.map((ub) => ({
+          ...ub,
+          books: typedBooks.find((b) => b.id === ub.book_id) || {
+            id: '',
+            isbn: '',
+            title: 'Unknown',
+            author: 'Unknown'
+          }
+        }))
+
+        setUserBooks(joinedBooks)
+        setTotalBooks(joinedBooks.length)
+        setReadBooks(joinedBooks.filter((b: UserBook) => b.is_read).length)
+      } else {
+        setUserBooks([])
+        setTotalBooks(0)
+        setReadBooks(0)
       }
 
-      // Load friends
+      // Load friends count
       const { data: friendsList, error: friendsError } = await supabase
         .from('friendships')
         .select('*')
-        .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
         .eq('status', 'accepted')
 
       if (!friendsError && friendsList) {
-        setFriendsCount(friendsList.length)
+        const typedFriendships = friendsList as Friendship[]
+        // Filter to only count friendships where the user is involved
+        const userFriendships = typedFriendships.filter(
+          (f) => f.user_id === user.id || f.friend_id === user.id
+        )
+        setFriendsCount(userFriendships.length)
       }
 
-      // Load lending requests
-      const { data: lendings, error: lendingsError } = await supabase
+      // Load lending requests count
+      const { data: ownerLendings, error: ownerError } = await supabase
         .from('lending_requests')
         .select('*')
-        .or(`owner_id.eq.${user.id},borrower_id.eq.${user.id}`)
-        .in('status', ['pending', 'approved'])
+        .eq('owner_id', user.id)
 
-      if (!lendingsError && lendings) {
-        setActiveLendings(lendings.length)
+      const { data: borrowerLendings, error: borrowerError } = await supabase
+        .from('lending_requests')
+        .select('*')
+        .eq('borrower_id', user.id)
+
+      if (!ownerError && !borrowerError) {
+        const allLendings: LendingRequest[] = [
+          ...((ownerLendings || []) as LendingRequest[]), 
+          ...((borrowerLendings || []) as LendingRequest[])
+        ]
+        const activeLendingsCount = allLendings.filter(
+          (l) => l.status === 'pending' || l.status === 'approved'
+        ).length
+        setActiveLendings(activeLendingsCount)
       }
     } catch (error) {
       console.error('Error loading dashboard data:', error)
