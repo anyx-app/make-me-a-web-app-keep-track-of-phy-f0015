@@ -130,6 +130,17 @@ class QueryBuilder {
     const projectId = import.meta.env.VITE_PROJECT_ID;
     const backendUrl = import.meta.env.VITE_ANYX_SERVER_URL;
 
+    // Validate required environment variables
+    if (!projectId) {
+      console.error('SDK Configuration Error: VITE_PROJECT_ID is not set');
+      throw new Error('Database configuration error: Missing project ID. Please check your environment variables.');
+    }
+    
+    if (!backendUrl) {
+      console.error('SDK Configuration Error: VITE_ANYX_SERVER_URL is not set');
+      throw new Error('Database configuration error: Missing server URL. Please check your environment variables.');
+    }
+
     const payload: Record<string, unknown> = {
       table: this.tableName,
       operation: this.operation || 'select'
@@ -168,26 +179,67 @@ class QueryBuilder {
       }
     }
 
-    const response = await fetch(`${backendUrl}/api/projects/${projectId}/query`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload)
-    });
+    const url = `${backendUrl}/api/projects/${projectId}/query`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      });
 
-    if (!response.ok) {
-      // Handle authentication failures
-      if (response.status === 401 || response.status === 403) {
-        localStorage.removeItem('anyx.auth.session');
-        window.dispatchEvent(new CustomEvent('auth-session-change', { detail: null }));
-        window.location.href = '/auth';
-        throw new Error('Session expired. Please sign in again.');
+      if (!response.ok) {
+        // Handle authentication failures
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem('anyx.auth.session');
+          window.dispatchEvent(new CustomEvent('auth-session-change', { detail: null }));
+          window.location.href = '/auth';
+          throw new Error('Session expired. Please sign in again.');
+        }
+        
+        let errorMessage = 'Query failed';
+        try {
+          const error = await response.json();
+          errorMessage = error.error || error.message || errorMessage;
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        
+        console.error(`SDK Query Error [${response.status}]:`, errorMessage, {
+          table: this.tableName,
+          operation: this.operation || 'select',
+          url
+        });
+        
+        throw new Error(errorMessage);
       }
-      const error = await response.json();
-      throw new Error(error.error || 'Query failed');
-    }
 
-    const result = await response.json();
-    return result;
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      // Handle network-level errors (CORS, DNS, connection refused, etc.)
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        console.error('SDK Network Error: Unable to reach backend server', {
+          url,
+          table: this.tableName,
+          operation: this.operation || 'select',
+          possibleCauses: [
+            'Network connectivity issues',
+            'CORS configuration problem',
+            'Backend server is down or unreachable',
+            'Invalid backend URL',
+            'Browser blocking the request'
+          ]
+        });
+        
+        throw new Error(
+          'Unable to connect to the server. Please check your internet connection and try again. If the problem persists, the service may be temporarily unavailable.'
+        );
+      }
+      
+      // Re-throw other errors (like our custom errors from above)
+      throw error;
+    }
   }
 
   then<TResult1 = unknown, TResult2 = never>(

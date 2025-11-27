@@ -270,6 +270,36 @@ const { data: booksData } = await supabase
 
 To work with related data, fetch tables separately and join in the frontend, or create database VIEWs.
 
+#### Error Handling
+
+The SDK (`src/sdk/supabase.ts`) includes robust error handling:
+
+**Environment Validation**:
+- Validates `VITE_PROJECT_ID` and `VITE_ANYX_SERVER_URL` before executing queries
+- Throws user-friendly error messages if configuration is missing
+
+**Network Error Handling**:
+- Catches `TypeError: Failed to fetch` (network failures, CORS issues, DNS errors)
+- Provides detailed console logs with diagnostic information
+- Returns user-friendly error messages for UI display
+
+**HTTP Error Handling**:
+- Automatically handles 401/403 authentication failures (clears session, redirects to `/auth`)
+- Parses error responses from backend API
+- Logs detailed error context (table, operation, URL) for debugging
+
+**Best Practices**:
+```typescript
+try {
+  const { data } = await supabase.from('table').select('*')
+  // Use data
+} catch (error) {
+  // error.message will be user-friendly
+  console.error('Operation failed:', error)
+  toast({ title: 'Error', description: error.message, variant: 'destructive' })
+}
+```
+
 ## Design System
 
 ### Brand Colors
