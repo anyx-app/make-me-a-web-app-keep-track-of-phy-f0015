@@ -13,7 +13,7 @@
 - **Backend**: Anyx Backend Proxy (managed Supabase)
 - **Database**: PostgreSQL (Supabase) with schema `proj_6a24a7eb`
 - **Authentication**: Backend Proxy Auth
-- **External APIs**: Open Library API for book metadata
+- **External APIs**: Google Books API for book metadata
 
 ## Architecture
 
@@ -108,21 +108,23 @@ CREATE TABLE lending_requests (
 
 ### API Integration
 
-#### Open Library API
+#### Google Books API
 Used to fetch book metadata from ISBN:
 
 ```typescript
 const response = await fetch(
-  `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
+  `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`
 )
 ```
 
-Returns:
-- Title
-- Author(s)
-- Cover image URLs
-- Summary/description
-- Publication date
+Returns (from `items[0].volumeInfo`):
+- `title` - Book title
+- `authors` - Array of author names
+- `imageLinks.thumbnail` - Cover image URL
+- `description` - Book summary/description
+- `publishedDate` - Publication date (YYYY or YYYY-MM-DD format)
+
+The published year is extracted from `publishedDate` and stored as `published_year` integer.
 
 #### Backend Proxy
 All database queries route through the backend proxy:
@@ -160,13 +162,14 @@ const { data, error } = await supabase
 
 ### ✅ Implemented
 1. **Authentication** - Login/signup via backend proxy
-2. **ISBN Book Entry** - Manual ISBN input with Open Library API
-3. **Book Metadata Fetching** - Automatic title, author, cover, summary
+2. **ISBN Book Entry** - Manual ISBN input with Google Books API
+3. **Book Metadata Fetching** - Automatic title, author, cover, summary, published year
 4. **Collection Management** - Add books, view collection grid
 5. **Read/Unread Tracking** - Toggle reading status
 6. **Search & Filter** - Filter books by title/author
 7. **Dashboard Stats** - Real-time collection statistics
 8. **Responsive Design** - Mobile-first with gradient aesthetics
+9. **Enhanced Error Handling** - Clear feedback for missing books and API errors
 
 ### 🚧 Planned (Placeholders)
 1. **Barcode Scanning** - Use phone camera to scan ISBN barcodes
