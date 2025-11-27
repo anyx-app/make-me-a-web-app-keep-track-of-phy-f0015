@@ -15,44 +15,17 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined)
 const STORAGE_KEY = 'theme'
 
-function getSystemTheme(): 'light' | 'dark' {
-  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
-
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themeId, setThemeIdState] = useState<ThemeId>(() => {
-    if (typeof window === 'undefined') return 'default-light'
-    
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) {
-      // Map legacy theme names to new IDs
-      return legacyThemeMap[saved] || saved
-    }
-    
-    // Default to system preference
-    const system = getSystemTheme()
-    return legacyThemeMap[system] || 'default-light'
-  })
+  const [themeId, setThemeIdState] = useState<ThemeId>('default-light')
 
   const theme = useMemo(() => getTheme(themeId), [themeId])
 
   useEffect(() => {
-    // Apply saved theme or system default on mount
-    const saved = localStorage.getItem(STORAGE_KEY)
-    let initialTheme: string
-
-    if (saved) {
-      initialTheme = legacyThemeMap[saved] || saved
-    } else {
-      const system = getSystemTheme()
-      initialTheme = legacyThemeMap[system] || 'default-light'
-      localStorage.setItem(STORAGE_KEY, initialTheme)
-    }
-
-    const themeObj = getTheme(initialTheme)
+    // Force default-light theme
+    localStorage.setItem(STORAGE_KEY, 'default-light')
+    const themeObj = getTheme('default-light')
     if (themeObj) {
       applyTheme(themeObj)
-      setThemeIdState(initialTheme)
     }
   }, [])
 

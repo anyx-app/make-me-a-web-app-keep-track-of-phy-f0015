@@ -1,23 +1,34 @@
-# Anyx React Boilerplate
+# BookHarmony
 
-**Boilerplate Version: 1** | A starter template for building scalable multi-page React applications with modern patterns and best practices.
+**Unite your world of books with ease**
 
-## 🚀 Features
+A modern web application for managing and sharing your physical book collection. Track your books, connect with fellow readers, and manage book lending seamlessly.
 
-- React 19.1.0 with hooks support
-- React Router DOM v6.28.0 for client-side routing
-- TypeScript with predefined types and interfaces
-- Tailwind CSS with CSS variables and utility-first styling
-- **UI Recipe Library** - Pre-built animated components (heroes, features, effects)
-- **Framer Motion Integration** - Smooth animations and transitions
-- **Production Stability** - Error boundaries, component guards, runtime validation
-- Enhanced Design System with 20 theme presets (10 families × light/dark)
-- Brand-Aware Components - 8 brand flavors for automatic styling
-- 50+ reusable UI components (shadcn/ui + Radix UI primitives)
-- Custom utility functions (`cn`, `formatDate`)
-- Folder structure for pages, components, hooks, utils, types, and styles
-- ESLint configured for TypeScript and React Hooks
-- Vite for fast builds and HMR
+## ✨ Key Features
+
+### 📚 Book Management
+- **ISBN Entry** - Manually enter ISBN to fetch book details from Open Library API
+- **Book Metadata** - Automatically fetch title, author, cover image, and summary
+- **Collection Overview** - View all your books in a beautiful grid layout
+- **Read/Unread Tracking** - Mark books as read or unread with one click
+- **Search & Filter** - Quickly find books by title or author
+
+### 👥 Social Features
+- **Friend Connections** - Add friends by username to share your reading journey
+- **Book Lending** - Request to borrow books from friends' collections
+- **Lending Management** - Track who has borrowed your books and when
+
+### 📊 Dashboard
+- **Collection Stats** - Total books, read count, completion percentage
+- **Friends Count** - See how many book buddies you have
+- **Active Lendings** - Track books currently being borrowed or lent
+
+### 🎨 Modern Design
+- Gradient-heavy cards with soft shadows
+- Warm, inviting color palette (#4A90E2 primary, #FF5A5F accent)
+- Responsive mobile-first design
+- Smooth transitions and hover effects
+- Backdrop blur effects for modern aesthetics
 
 ## 📁 Folder Structure
 ```
@@ -87,34 +98,40 @@ Best practices:
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/mkisilenko/anyx-react-boilerplate-webapp.git my-app
-   cd my-app
+   git clone https://github.com/anyx-app/make-me-a-web-app-keep-track-of-phy-f0015.git
+   cd make-me-a-web-app-keep-track-of-phy-f0015
    ```
 
 2. **Install dependencies**
 
    ```bash
-   npm install
-   # or
    pnpm install
    ```
 
-3. **Start development server**
+3. **Set up environment variables**
 
-   ```bash
-   npm run dev
+   Create a `.env` file with:
+   ```
+   VITE_USE_BACKEND_AUTH=true
+   VITE_ANYX_API_KEY=your_key_here
    ```
 
-4. **Build for production**
+4. **Run database migrations**
 
    ```bash
-   npm run build
+   psql "your_connection_string" -c "SET search_path TO proj_6a24a7eb;" -f supabase/migrations/001_initial_schema.sql
    ```
 
-5. **Preview production build**
+5. **Start development server**
 
    ```bash
-   npm run preview
+   pnpm dev
+   ```
+
+6. **Build for production**
+
+   ```bash
+   pnpm build
    ```
 
 ## 🛡️ Production Stability

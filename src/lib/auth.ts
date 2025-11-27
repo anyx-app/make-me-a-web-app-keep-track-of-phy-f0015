@@ -8,7 +8,7 @@
  * Determined by VITE_USE_BACKEND_AUTH environment variable
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/sdk/supabase';
 
 const USE_BACKEND_AUTH = import.meta.env.VITE_USE_BACKEND_AUTH === 'true';
 const PROJECT_ID = import.meta.env.VITE_PROJECT_ID;
