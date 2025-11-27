@@ -132,12 +132,25 @@ All database queries route through the backend proxy:
 ```typescript
 import { supabase } from '@/sdk/supabase'
 
-// Example query
+// Example query (Note: Backend proxy does NOT support PostgREST joins)
 const { data, error } = await supabase
   .from('user_books')
-  .select('*, books(*)')
+  .select('*')
   .eq('user_id', user.id)
+
+// For related data, fetch separately and join in frontend
+const { data: booksData } = await supabase
+  .from('books')
+  .select('*')
+  .in('id', bookIds)
 ```
+
+**Important**: The backend proxy SDK does NOT support:
+- PostgREST nested selects (e.g., `books(*)`)
+- Relation syntax (e.g., `table.field`)
+- Join operators (`!inner`, `!left`)
+
+To work with related data, fetch tables separately and join in the frontend, or create database VIEWs.
 
 ## Design System
 
