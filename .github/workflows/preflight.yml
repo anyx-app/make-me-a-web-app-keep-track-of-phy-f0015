@@ -1,0 +1,36 @@
+# .github/workflows/preflight.yml
+name: 'Pre-flight Checks'
+
+on:
+  pull_request:
+    branches:
+      - 'main'
+
+jobs:
+  build_and_lint:
+    name: 'Build & Lint'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Checkout Repository'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: 'Set up Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: 'Set up pnpm'
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: 'Install Dependencies'
+        run: pnpm install
+
+      - name: 'Run Lint Check'
+        id: lint
+        run: pnpm run lint
+        continue-on-error: true
