@@ -1,25 +1,201 @@
-# BookHarmony - Technical Documentation
+# Frontend Scaffold - Technical Documentation
 
 ## Project Overview
 
-**BookHarmony** is a web application for managing physical book collections. Users can track their books, mark reading status, connect with friends, and manage book lending.
+**Frontend Scaffold** is a minimal, framework-free web application starter. It provides a clean structure with vanilla HTML, CSS, and JavaScript, organized for easy maintenance and backend integration.
 
 ## Tech Stack
 
-- **Frontend**: React 19.1.0 + TypeScript
-- **UI Framework**: Tailwind CSS with shadcn/ui components
-- **Routing**: React Router DOM v6.28.0
-- **Build Tool**: Vite
-- **Backend**: Anyx Backend Proxy (managed Supabase)
-- **Database**: PostgreSQL (Supabase) with schema `proj_6a24a7eb`
-- **Authentication**: Backend Proxy Auth
-- **External APIs**: Google Books API for book metadata
+- **Frontend**: Vanilla HTML5, CSS3, JavaScript (ES6+)
+- **Structure**: Organized into `html/`, `css/`, `js/` directories
+- **Routing**: Hash-based client-side navigation
+- **Styling**: CSS custom properties (CSS variables)
+- **No Build Process**: Direct browser execution
 
-## Architecture
+## Frontend Structure
 
-### Database Schema
+### Directory Organization
 
-The application uses a shared Supabase schema (`proj_6a24a7eb`) with the following tables:
+```
+frontend/
+├── html/           # HTML pages
+│   ├── index.html  # Homepage
+│   ├── features.html
+│   ├── about.html
+│   └── contact.html
+├── css/            # Stylesheets
+│   └── styles.css  # Main stylesheet with CSS reset
+└── js/             # JavaScript
+    └── app.js      # Navigation and backend integration
+```
+
+### Page Structure
+
+Each HTML page follows a consistent structure:
+- Common header with navigation
+- Main content area with unique page content
+- Shared footer
+- Links to CSS and JS assets
+
+### Navigation System
+
+Hash-based routing implemented in `app.js`:
+- Pages registered in `APP_CONFIG.pages` object
+- Hash changes trigger page navigation
+- Active nav links highlighted automatically
+
+## Backend Integration
+
+The scaffold is designed to work with any backend. Integration hooks are provided in `app.js`:
+
+### Configuration
+
+```javascript
+const APP_CONFIG = {
+    backendUrl: 'https://your-backend-api.com',
+    defaultPage: 'home',
+    pages: {
+        home: 'index.html',
+        features: 'features.html',
+        about: 'about.html',
+        contact: 'contact.html'
+    }
+};
+```
+
+### Integration Hooks
+
+#### `onInit()`
+Called when the application loads. Use for authentication checks, initial data loading, etc.
+
+#### `onNavigate(page)`
+Called when navigating between pages. Use for analytics, page-specific data loading, etc.
+
+#### `fetchFromBackend(endpoint, options)`
+Wrapper for `fetch()` that includes:
+- Automatic base URL prepending
+- Authentication headers
+- Error handling
+
+#### Authentication Helpers
+
+```javascript
+// Get stored auth token
+getAuthToken()
+
+// Store auth token
+setAuthToken(token)
+
+// Remove auth token (logout)
+clearAuthToken()
+```
+
+### Example Integration
+
+```javascript
+// Initialize app with auth check
+async function onInit() {
+    const token = getAuthToken();
+    if (token) {
+        try {
+            const user = await fetchFromBackend('/api/user');
+            console.log('Logged in as:', user.name);
+        } catch (error) {
+            clearAuthToken();
+        }
+    }
+}
+
+// Handle form submission
+async function handleContactFormSubmit(event) {
+    event.preventDefault();
+    const formData = {
+        name: event.target.name.value,
+        email: event.target.email.value,
+        message: event.target.message.value
+    };
+    
+    try {
+        const response = await fetchFromBackend('/api/contact', {
+            method: 'POST',
+            body: JSON.stringify(formData)
+        });
+        alert('Message sent successfully!');
+    } catch (error) {
+        alert('Failed to send message');
+    }
+}
+```
+
+## CSS Architecture
+
+### CSS Reset
+A comprehensive reset normalizes browser defaults:
+- Box-sizing, margins, paddings
+- Typography defaults
+- Form element normalization
+
+### CSS Custom Properties
+
+All design tokens are defined as CSS variables in `:root`:
+
+```css
+:root {
+  /* Colors */
+  --color-primary: #667eea;
+  --color-secondary: #764ba2;
+  --color-accent: #f093fb;
+  --color-text: #2d3748;
+  --color-background: #ffffff;
+  
+  /* Spacing */
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  
+  /* Typography */
+  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', ...;
+  --font-size-base: 16px;
+  --line-height-base: 1.6;
+  
+  /* Effects */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  
+  /* Transitions */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 250ms ease-in-out;
+}
+```
+
+### Component Styles
+
+Key CSS classes:
+- `.page-container` - Full page wrapper
+- `.site-header` - Header with navigation
+- `.nav-bar`, `.nav-menu`, `.nav-link` - Navigation components
+- `.hero-section` - Homepage hero area
+- `.features-grid` - Feature card layout
+- `.card` - Generic card component
+- `.btn`, `.btn-primary`, `.btn-secondary` - Button variants
+- `.form-group`, `.form-input` - Form elements
+
+### Responsive Design
+
+Mobile-first approach with breakpoints:
+```css
+@media (min-width: 768px) { /* Tablet */ }
+@media (min-width: 1024px) { /* Desktop */ }
+```
+
+## Legacy React Architecture (Reference Only)
+
+The repository also contains a React-based architecture in the `src/` directory. This is kept for reference if you decide to migrate to a framework. Key components include:
+
+### Database Schema (Legacy)
+
+The legacy React app uses a shared Supabase schema (`proj_6a24a7eb`) with tables for books, users, friendships, and lending:
 
 #### `books`
 Stores book metadata fetched from ISBN lookups.
