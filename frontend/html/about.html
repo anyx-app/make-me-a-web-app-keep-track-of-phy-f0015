@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Frontend Scaffold</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="page-container">
+        <header class="site-header">
+            <nav class="nav-bar">
+                <div class="nav-brand">
+                    <h1 class="logo">Frontend Scaffold</h1>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="#home" class="nav-link">Home</a></li>
+                    <li><a href="#features" class="nav-link">Features</a></li>
+                    <li><a href="#about" class="nav-link active">About</a></li>
+                    <li><a href="#contact" class="nav-link">Contact</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main id="app-content" class="main-content content-page">
+            <section class="page-header">
+                <h1 class="page-title">About This Project</h1>
+                <p class="page-subtitle">A minimal, extensible frontend starting point</p>
+            </section>
+
+            <section class="content-section">
+                <div class="about-content">
+                    <h2>What is Frontend Scaffold?</h2>
+                    <p>
+                        Frontend Scaffold is a clean, minimal starting point for web applications. 
+                        It provides the essential structure and tools you need without the bloat 
+                        of heavy frameworks or complex build processes.
+                    </p>
+
+                    <h2>Philosophy</h2>
+                    <p>
+                        We believe in keeping things simple. This scaffold uses vanilla HTML, CSS, 
+                        and JavaScript to give you full control over your code. There are no hidden 
+                        abstractions or magic - just clean, readable code that works.
+                    </p>
+
+                    <h2>Who is this for?</h2>
+                    <ul>
+                        <li><strong>Learners</strong> - Understand web fundamentals without framework complexity</li>
+                        <li><strong>Rapid Prototypers</strong> - Build quick MVPs and proof-of-concepts</li>
+                        <li><strong>Backend Developers</strong> - Get a frontend up and running quickly</li>
+                        <li><strong>Minimalists</strong> - Prefer simple solutions over heavy tooling</li>
+                    </ul>
+
+                    <h2>Customization</h2>
+                    <p>
+                        Every aspect of this scaffold is designed to be easily customizable. 
+                        Change the colors, modify the layout, add your own components - it's 
+                        all straightforward HTML, CSS, and JavaScript.
+                    </p>
+
+                    <h2>Backend Integration</h2>
+                    <p>
+                        This scaffold is backend-agnostic. Use it with any backend framework 
+                        or API service. The JavaScript includes placeholder functions for API 
+                        calls that you can fill in with your own implementation.
+                    </p>
+                </div>
+            </section>
+
+            <section class="cta-section">
+                <button class="btn btn-primary" onclick="navigateTo('features')">Explore Features</button>
+            </section>
+        </main>
+
+        <footer class="site-footer">
+            <p>&copy; 2025 Frontend Scaffold. Open source and ready to customize.</p>
+        </footer>
+    </div>
+
+    <script src="../js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Features - Frontend Scaffold</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="page-container">
+        <header class="site-header">
+            <nav class="nav-bar">
+                <div class="nav-brand">
+                    <h1 class="logo">Frontend Scaffold</h1>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="#home" class="nav-link">Home</a></li>
+                    <li><a href="#features" class="nav-link active">Features</a></li>
+                    <li><a href="#about" class="nav-link">About</a></li>
+                    <li><a href="#contact" class="nav-link">Contact</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main id="app-content" class="main-content content-page">
+            <section class="page-header">
+                <h1 class="page-title">Features</h1>
+                <p class="page-subtitle">Everything you need to get started quickly</p>
+            </section>
+
+            <section class="content-section">
+                <div class="feature-detail">
+                    <h2>📁 Clean Structure</h2>
+                    <p>Organized folder structure separating HTML, CSS, and JavaScript for easy maintenance and scalability.</p>
+                    <ul>
+                        <li><code>frontend/html/</code> - All your HTML pages</li>
+                        <li><code>frontend/css/</code> - Stylesheets and themes</li>
+                        <li><code>frontend/js/</code> - JavaScript modules and logic</li>
+                    </ul>
+                </div>
+
+                <div class="feature-detail">
+                    <h2>🎨 Flexible Styling</h2>
+                    <p>Modern CSS with custom properties (CSS variables) for easy theming and customization.</p>
+                    <ul>
+                        <li>CSS reset for consistency across browsers</li>
+                        <li>Responsive design with mobile-first approach</li>
+                        <li>Easy-to-customize color scheme and typography</li>
+                    </ul>
+                </div>
+
+                <div class="feature-detail">
+                    <h2>🔌 Backend Ready</h2>
+                    <p>Pre-built hooks for integrating with your backend API of choice.</p>
+                    <ul>
+                        <li><code>onInit()</code> - Application initialization</li>
+                        <li><code>onNavigate()</code> - Navigation event handling</li>
+                        <li><code>fetchFromBackend()</code> - API integration placeholder</li>
+                    </ul>
+                </div>
+
+                <div class="feature-detail">
+                    <h2>⚡ No Build Step</h2>
+                    <p>Pure HTML, CSS, and JavaScript - no build tools, no dependencies, just open and run.</p>
+                    <ul>
+                        <li>Works directly in any modern browser</li>
+                        <li>Easy to understand and modify</li>
+                        <li>Perfect for learning or prototyping</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="cta-section">
+                <button class="btn btn-primary" onclick="navigateTo('contact')">Get in Touch</button>
+            </section>
+        </main>
+
+        <footer class="site-footer">
+            <p>&copy; 2025 Frontend Scaffold. Open source and ready to customize.</p>
+        </footer>
+    </div>
+
+    <script src="../js/app.js"></script>
+</body>
+</html>
