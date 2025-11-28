@@ -4,6 +4,8 @@
 
 A modern web application for managing and sharing your physical book collection. Track your books, connect with fellow readers, and manage book lending seamlessly.
 
+> 📖 **Public Open Source Project** - Licensed under MIT. Contributions welcome!
+
 ## ✨ Key Features
 
 ### 📚 Book Management
@@ -263,7 +265,35 @@ import { Link } from 'react-router-dom'
 
 ## 🤝 Contributing
 
-Contributions welcome! Please open issues or pull requests. Keep code quality high and follow existing conventions.
+**BookHarmony is now a public open-source project!** We welcome contributions from the community.
+
+### How to Contribute
+
+1. **Fork the repository** and create your feature branch from `main`
+2. **Make your changes** following the existing code conventions
+3. **Test your changes** thoroughly using `pnpm lint && pnpm build`
+4. **Commit your changes** with clear, descriptive commit messages
+5. **Push to your fork** and submit a pull request
+
+### Contribution Guidelines
+
+- Keep code quality high and follow existing conventions
+- Write clear, descriptive commit messages
+- Update documentation for any user-facing changes
+- Ensure all tests pass before submitting
+- Be respectful and constructive in discussions
+
+### Reporting Issues
+
+Found a bug or have a feature request? Please [open an issue](https://github.com/anyx-app/make-me-a-web-app-keep-track-of-phy-f0015/issues) with:
+- Clear description of the issue or feature
+- Steps to reproduce (for bugs)
+- Expected vs actual behavior
+- Screenshots if applicable
+
+### Code of Conduct
+
+This is a welcoming community project. Please be respectful, inclusive, and professional in all interactions.
 
 ## 📄 License
 
