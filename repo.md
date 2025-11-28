@@ -387,6 +387,41 @@ Built for **Vercel serverless** deployment:
 
 This fix resolves all dashboard data loading errors and ensures authenticated users can properly access their collections.
 
+### Console Error Cleanup (2025-01)
+**Issue**: Production console logs were polluted with numerous "TypeError: Failed to fetch" and "Error loading dashboard data" messages that appeared as errors but were actually expected network failures during normal operation (e.g., network unavailability, service maintenance).
+
+**Root Cause Analysis**:
+- SDK diagnostic logging in `src/sdk/supabase.ts` was using `console.error()` for all network failures
+- Dashboard and service layers were logging operational errors as `console.error()` even when gracefully handling them with fallback data
+- HTTP 4xx client errors (user issues) were logged at same severity as 5xx server errors (system issues)
+
+**Solution**: Implemented graduated error logging strategy:
+1. **SDK Layer** (`src/sdk/supabase.ts`):
+   - Network errors → `console.warn()` (diagnostic info, not critical failures)
+   - HTTP 4xx errors → `console.warn()` (client errors, expected behavior)
+   - HTTP 5xx errors → `console.error()` (server errors requiring investigation)
+   - Auth parsing errors → `console.warn()` (handled gracefully)
+
+2. **Dashboard Layer** (`src/pages/Dashboard.tsx`):
+   - Dashboard data loading → `console.warn()` with default value fallbacks
+   - Friend data loading → `console.warn()` with empty array fallbacks
+   - Google Books API errors → `console.warn()` (user already sees toast notification)
+
+3. **Service Layer** (`src/services/friendService.ts`, `src/services/friendsCatalogService.ts`):
+   - All functions returning empty arrays on error → `console.warn()` (graceful degradation)
+   - Functions throwing errors kept `console.error()` for upstream handling
+
+**Benefits**:
+- Console errors now only appear for critical system failures requiring immediate attention
+- Network unavailability (expected during service maintenance) no longer pollutes error logs
+- Developers can quickly identify actual bugs vs. operational warnings
+- Production monitoring tools can focus on real errors instead of noise
+
+**Preserved Behaviors**:
+- All error handling remains unchanged (graceful degradation, fallback values)
+- User-facing error messages (toasts, UI states) unchanged
+- SDK configuration errors remain as `console.error()` (critical setup issues)
+
 ## Brand Identity
 
 **Name**: BookHarmony  

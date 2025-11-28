@@ -175,7 +175,7 @@ class QueryBuilder {
           headers['Authorization'] = `Bearer ${session.access_token}`;
         }
       } catch (e) {
-        console.error('Failed to parse auth session:', e);
+        console.warn('Failed to parse auth session:', e);
       }
     }
 
@@ -205,11 +205,21 @@ class QueryBuilder {
           errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         }
         
-        console.error(`SDK Query Error [${response.status}]:`, errorMessage, {
-          table: this.tableName,
-          operation: this.operation || 'select',
-          url
-        });
+        // Use console.warn for non-critical HTTP errors to avoid polluting error logs
+        if (response.status >= 400 && response.status < 500) {
+          console.warn(`SDK Query Error [${response.status}]:`, errorMessage, {
+            table: this.tableName,
+            operation: this.operation || 'select',
+            url
+          });
+        } else {
+          // Only use console.error for server errors (5xx)
+          console.error(`SDK Query Error [${response.status}]:`, errorMessage, {
+            table: this.tableName,
+            operation: this.operation || 'select',
+            url
+          });
+        }
         
         throw new Error(errorMessage);
       }
@@ -219,7 +229,9 @@ class QueryBuilder {
     } catch (error) {
       // Handle network-level errors (CORS, DNS, connection refused, etc.)
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
-        console.error('SDK Network Error: Unable to reach backend server', {
+        // Use console.warn instead of console.error for diagnostic info
+        // to avoid polluting production error logs
+        console.warn('SDK Network Error: Unable to reach backend server', {
           url,
           table: this.tableName,
           operation: this.operation || 'select',

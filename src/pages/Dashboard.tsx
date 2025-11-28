@@ -182,7 +182,16 @@ export default function Dashboard() {
         setActiveLendings(activeLendingsCount)
       }
     } catch (error) {
-      console.error('Error loading dashboard data:', error)
+      // Use console.warn instead of console.error for better error tracking
+      // The error is already handled by the SDK layer
+      console.warn('Error loading dashboard data:', error)
+      
+      // Set default values so the dashboard still renders
+      setUserBooks([])
+      setTotalBooks(0)
+      setReadBooks(0)
+      setFriendsCount(0)
+      setActiveLendings(0)
     }
   }, [user])
 
@@ -202,7 +211,14 @@ export default function Dashboard() {
       setOutgoingRequests(outgoing)
       setFriends(friendsList)
     } catch (error) {
-      console.error('Error loading friend data:', error)
+      // Use console.warn instead of console.error for better error tracking
+      // The error is already handled by the SDK layer
+      console.warn('Error loading friend data:', error)
+      
+      // Set default values so friend features still work
+      setIncomingRequests([])
+      setOutgoingRequests([])
+      setFriends([])
     }
   }, [user])
 
@@ -362,7 +378,8 @@ export default function Dashboard() {
         description: `"${bookInfo.title}" by ${bookInfo.author}` 
       })
     } catch (error) {
-      console.error('Error fetching book:', error)
+      // Use console.warn since user already sees error via toast
+      console.warn('Error fetching book:', error)
       toast({ 
         title: "Error fetching book", 
         description: error instanceof Error ? error.message : "Please try again", 

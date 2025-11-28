@@ -97,7 +97,8 @@ export const friendsCatalogService = {
 
       return friendBooks;
     } catch (error) {
-      console.error('Error searching friends catalog:', error);
+      // Use console.warn since we gracefully return empty array
+      console.warn('Error searching friends catalog:', error);
       return [];
     }
   },
@@ -157,7 +158,8 @@ export const friendsCatalogService = {
         };
       });
     } catch (error) {
-      console.error('Error getting friend book details:', error);
+      // Use console.warn since we gracefully return empty array
+      console.warn('Error getting friend book details:', error);
       return [];
     }
   }

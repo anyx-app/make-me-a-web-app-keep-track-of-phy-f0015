@@ -179,7 +179,8 @@ export const friendService = {
         requester: requestersMap.get(req.requester_id)
       }));
     } catch (error) {
-      console.error('Error getting incoming requests:', error);
+      // Use console.warn since we gracefully return empty array
+      console.warn('Error getting incoming requests:', error);
       return [];
     }
   },
@@ -213,7 +214,8 @@ export const friendService = {
         recipient: recipientsMap.get(req.recipient_id)
       }));
     } catch (error) {
-      console.error('Error getting outgoing requests:', error);
+      // Use console.warn since we gracefully return empty array
+      console.warn('Error getting outgoing requests:', error);
       return [];
     }
   },
@@ -299,7 +301,8 @@ export const friendService = {
 
       return (friends || []) as User[];
     } catch (error) {
-      console.error('Error getting friends:', error);
+      // Use console.warn since we gracefully return empty array
+      console.warn('Error getting friends:', error);
       return [];
     }
   },
